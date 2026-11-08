@@ -1,0 +1,7 @@
+# Runtime dependencies (compatible-release pins). Verified on CPython 3.14 / Linux x86_64 with binary wheels only.
+fastapi~=0.162.0
+uvicorn[standard]~=0.54.0
+pydantic~=2.14.0
+pydantic-settings~=2.16.0
+sqlalchemy~=2.0.57
+alembic~=1.20.0

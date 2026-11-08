@@ -1,0 +1,27 @@
+services:
+  api:
+    build:
+      context: ./backend
+    image: secureai-gateway-api:0.1.0
+    container_name: secureai-gateway-api
+    env_file:
+      - .env
+    environment:
+      # Persistent location inside the container (overrides the value from .env).
+      DATABASE_URL: sqlite:////app/data/secureai.db
+    ports:
+      # Bound to loopback only; put a reverse proxy in front for real deployments.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - api-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  api-data:
