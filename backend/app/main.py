@@ -12,6 +12,8 @@ from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
+from app.db.session import build_engine, build_session_factory
+from app.core.rate_limit import RateLimitMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.docs_enabled,
     )
     yield
+    app.state.engine.dispose()
     logger.info("Shutting down %s", settings.app_name)
 
 
@@ -44,13 +47,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
+    app.state.engine = build_engine(settings.database_url)  # lazy: connects on first use
+    app.state.session_factory = build_session_factory(app.state.engine)
+    app.add_middleware(RateLimitMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
         allow_credentials=False,
-        allow_methods=["GET"],  # widen deliberately when write endpoints are added
-        allow_headers=["Authorization", "Content-Type"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_headers=["Authorization", "Content-Type", "X-API-Key"],
     )
 
     register_exception_handlers(app)
